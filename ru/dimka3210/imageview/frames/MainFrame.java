@@ -1,15 +1,12 @@
 package ru.dimka3210.imageview.frames;
 
+import ru.dimka3210.imageview.helpers.HistoryHelper;
 import ru.dimka3210.imageview.lib.Config;
 import ru.dimka3210.imageview.lib.Screen;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 
 public class MainFrame extends JFrame {
@@ -26,7 +23,7 @@ public class MainFrame extends JFrame {
         rightPanel = new JPanel();
         bigImage = new JLabel();
 
-        setTitle(Config.getTitle());
+        setTitle(Config.TITLE);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(Screen.getFrameSize());
         setLocationRelativeTo(null);
@@ -36,9 +33,8 @@ public class MainFrame extends JFrame {
     }
 
     private void renderMainPanel() {
-        final int leftWidth = 250;
+        final int leftWidth = Config.LEFT_PANEL_WIDTH;
         Dimension frameSize = Screen.getFrameSize();
-        Border b = new LineBorder(new Color(0, 255, 0), 1);
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.LINE_AXIS));
 
         leftPanel.setPreferredSize(new Dimension(leftWidth, frameSize.height));
@@ -46,8 +42,6 @@ public class MainFrame extends JFrame {
         bigImage.setPreferredSize(rightPanel.getPreferredSize());
         rightPanel.setLayout(new BorderLayout());
         rightPanel.add(bigImage, BorderLayout.CENTER);
-//        leftPanel.setBorder(b);
-//        rightPanel.setBorder(b);
 
         Box mainBox = Box.createHorizontalBox();
         mainBox.add(leftPanel);
@@ -59,37 +53,33 @@ public class MainFrame extends JFrame {
 
     private void renderMenu() {
         JMenuBar bar = new JMenuBar();
+        JMenu menu = new JMenu("Menu");
 
-        JMenu menuFile = new JMenu("File");
-        JMenuItem menuAbout = new JMenuItem("About");
-
-        menuAbout.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                AboutFrame.showFrame();
-            }
-        });
-
-
-        JMenuItem itemOpen = new JMenuItem("Open directory", getIcon("menu-open.png", 16, 16));
+        JMenuItem itemOpen = new JMenuItem("Open file", getIcon("menu-open.png", 16, 16));
         itemOpen.addActionListener(menuListener.getOpenListener());
-        JMenuItem itemClose = new JMenuItem("Close", getIcon("menu-close.png", 16, 16));
+
+        JMenuItem itemClose = new JMenuItem("Flush history", getIcon("menu-close.png", 16, 16));
         JMenuItem itemExit = new JMenuItem("Exit", getIcon("menu-exit.png", 16, 16));
 
-        menuFile.add(itemOpen);
-        menuFile.add(itemClose);
-        menuFile.add(itemExit);
+        JMenuItem menuAbout = new JMenuItem("About");
+        menuAbout.addActionListener(menuListener.getAboutListener());
 
-        bar.add(menuFile);
-        bar.add(menuAbout);
+        menu.add(itemOpen);
+        menu.add(itemClose);
+        menu.add(itemExit);
+        menu.addSeparator();
+        menu.add(menuAbout);
 
+        bar.add(menu);
         setJMenuBar(bar);
     }
 
+    // TODO: make ImageHelper
+    // TODO: use Config for get paths
     private Icon getIcon(String fileName, int width, int height) {
         Icon icon = null;
         try {
-            Image image = ImageIO.read(new File("ru/dimka3210/imageview/images/" + fileName));
+            Image image = ImageIO.read(new File(Config.IMAGES_PATH + fileName));
             Image resizeImage = image.getScaledInstance(width, height, 0);
             icon = new ImageIcon(resizeImage);
         } catch (Exception e) {
@@ -98,6 +88,7 @@ public class MainFrame extends JFrame {
         return icon;
     }
 
+    // TODO: move to ImageHelper
     public void renderBigImage(String filename) {
         try {
             Dimension frameSize = rightPanel.getSize();
@@ -105,12 +96,14 @@ public class MainFrame extends JFrame {
             ImageIcon imageIcon = new ImageIcon(filename);
             Dimension imageSize = new Dimension(imageIcon.getIconWidth(), imageIcon.getIconHeight());
             Dimension finalSize = processImageSize(frameSize, imageSize);
-            System.out.println(finalSize);
             ImageIcon resultBigImageIcon = new ImageIcon(image.getScaledInstance(finalSize.width, finalSize.height, 0));
             bigImage.removeAll();
             bigImage.setIcon(resultBigImageIcon);
             bigImage.validate();
             bigImage.repaint();
+
+            HistoryHelper.addIntoHistory(filename);
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -125,8 +118,7 @@ public class MainFrame extends JFrame {
         int result_width = imageSize.width;
         int result_height = imageSize.height;
 
-
-        double k = 1;
+        double k;
 
         if (i_w > f_w) {
             k = (double) f_w / (double) i_w;

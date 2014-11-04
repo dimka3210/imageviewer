@@ -1,5 +1,7 @@
 package ru.dimka3210.imageview.frames;
 
+import ru.dimka3210.imageview.lib.Config;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -33,7 +35,7 @@ public class MainFrameMenuListener {
                     }
                 });
                 if (lastDir == null) {
-                    dialog.setDirectory(System.getProperty("user.home"));
+                    dialog.setDirectory(Config.getDialogDefaultPath());
                 } else {
                     dialog.setDirectory(lastDir);
                 }
@@ -44,6 +46,15 @@ public class MainFrameMenuListener {
                     return;
                 }
                 mainFrame.renderBigImage(dialog.getDirectory() + File.separator + dialog.getFile());
+            }
+        };
+    }
+
+    public ActionListener getAboutListener() {
+        return new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                AboutFrame.showFrame();
             }
         };
     }
